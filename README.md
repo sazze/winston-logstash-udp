@@ -40,7 +40,7 @@ Run Tests
 ====================
 
 ```
-  NODE_TLS_REJECT_UNAUTHORIZED=0 npm test
+  npm test
 ```
 
 ====================
