@@ -1,0 +1,54 @@
+{
+    "name": "winston-logstash-udp",
+    "version": "0.0.1",
+    "description": "A Logstash UDP transport for winston",
+    "main": "./lib/winston-logstash-udp",
+    "homepage": "https://github.com/sazze/winston-logstash-udp",
+    "scripts": {
+        "test": "mocha test/*_test.js"
+    },
+    "engines": {
+        "node": ">=0.8.x"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/sazze/winston-logstash-udp.git"
+    },
+    "dependencies": {
+        "winston": ">=0.7.2"
+    },
+    "devDependencies": {
+        "winston": ">=0.7.2",
+        "mocha": ">=1.8.2",
+        "chai": ">=1.5.0",
+        "timekeeper": ">=0.0.3"
+    },
+    "keywords": [
+        "logging",
+        "sysadmin",
+        "tools"
+    ],
+    "bugs": {
+        "url": "https://github.com/sazze/winston-logstash-udp/issues"
+    },
+    "author": {
+        "name": "Craig Thayer",
+        "email": "cthayer@sazze.com"
+    },
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Craig Thayer",
+            "email": "cthayer@sazze.com"
+        },
+        {
+            "name": "mbrevoort"
+        }
+    ],
+    "maintainers": [
+        {
+            "name": "Craig Thayer",
+            "email": "cthayer@sazze.com"
+        }
+    ]
+}
