@@ -62,7 +62,7 @@ describe('winston-logstash-udp transport', function () {
             var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
 
             test_server = createTestServer(port, function (data) {
-                response = JSON.parse(JSON.parse(data));
+                response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
                 done();
             });
