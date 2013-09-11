@@ -9,6 +9,24 @@ Usage
 ====================
 
 ### Node
+
+Recommended method:
+``` js
+    var winston = require('winston'),
+        LogstashUDP = require('winston-logstash-udp').LogstashUDP;
+
+    var logger = new(winston.Logger)({
+      transports: [{
+        new(LogstashUDP)({
+          port: 9999,
+          appName: 'my application name',
+          host: '127.0.0.1'
+        })
+      }]
+    });
+```
+
+Alternate method:
 ``` js
     var winston = require('winston');
 
