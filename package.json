@@ -43,6 +43,10 @@
         },
         {
             "name": "mbrevoort"
+        },
+        {
+            "name": "devAsterisk",
+            "email": "asterisk@makeus.com"
         }
     ],
     "maintainers": [
