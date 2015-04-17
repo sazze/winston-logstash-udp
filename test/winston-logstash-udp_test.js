@@ -35,15 +35,25 @@ describe('winston-logstash-udp transport', function () {
         return server;
     }
 
-    function createLogger(port) {
+    function createLogger(port, options) {
+        var defaultOptions = {
+            port: port,
+            appName: 'test',
+            localhost: 'localhost',
+            pid: 12345
+        },
+        options = options || {},
+        field;
+
+        for (field in defaultOptions) {
+            if (defaultOptions.hasOwnProperty(field) && !options.hasOwnProperty(field)) {
+                options[field] = defaultOptions[field];
+            }
+        }
+
         return new (winston.Logger)({
             transports: [
-                new (winston.transports.LogstashUDP)({
-                    port: port,
-                    appName: 'test',
-                    localhost: 'localhost',
-                    pid: 12345
-                })
+                new (winston.transports.LogstashUDP)(options)
             ]
         });
     }
@@ -64,6 +74,22 @@ describe('winston-logstash-udp transport', function () {
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('add trailing line-feed if the option is on', function (done) {
+            var logger = createLogger(
+                port,
+                {
+                    trailingLineFeed: true
+                }
+            );
+
+            test_server = createTestServer(port, function (data) {
+                expect(data.toString().slice(-1)).to.be.eql("\n");
                 done();
             });
 
