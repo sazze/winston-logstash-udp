@@ -103,12 +103,12 @@ describe('winston-logstash-udp transport', function () {
                     port,
                     {
                         trailingLineFeed: true,
-                        trailingLineFeedChar: "\r\n"
+                        trailingLineFeedChar: os.EOL + "\n"
                     }
                 );
 
                 test_server = createTestServer(port, function (data) {
-                    expect(data.toString().slice(-2)).to.be.eql("\r\n");
+                    expect(data.toString().slice(-(os.EOL.length + 1))).to.be.eql(os.EOL + "\n");
                     done();
                 });
 
