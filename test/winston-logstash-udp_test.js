@@ -91,7 +91,7 @@ describe('winston-logstash-udp transport', function () {
                 );
 
                 test_server = createTestServer(port, function (data) {
-                    expect(data.toString().slice(-1)).to.be.eql(os.EOL);
+                    expect(data.toString().slice(-os.EOL.length)).to.be.eql(os.EOL);
                     done();
                 });
 
