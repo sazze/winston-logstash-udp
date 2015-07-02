@@ -22,7 +22,8 @@
         "winston": ">=0.7.2",
         "mocha": ">=1.8.2",
         "chai": ">=1.5.0",
-        "timekeeper": ">=0.0.3"
+        "timekeeper": ">=0.0.3",
+        "sinon-chai": "~2.8.0"
     },
     "keywords": [
         "logging",
