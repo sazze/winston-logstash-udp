@@ -61,6 +61,23 @@ Run Tests
   npm test
 ```
 
+Troubleshooting
+====================
+
+* **I get an error when installing node packages *"ERR! Error: No compatible version found: assertion-error@'^1.0.1'"***
+
+  If you are running a version of NodeJS less than or equal to 0.8, upgrading NPM to a version greater than or equal to 1.4.6 should solve this issue.
+
+  ```
+  npm install -g npm@~1.4.6
+  ```
+
+  Another way around is to simply avoid installing the development dependencies:
+
+  ```
+  npm install --production
+  ```
+
 ====================
 
 #### Author: [Craig Thayer](https://github.com/sazze)

@@ -1,6 +1,6 @@
 {
     "name": "winston-logstash-udp",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "A Logstash UDP transport for winston",
     "main": "./lib/winston-logstash-udp",
     "homepage": "https://github.com/sazze/winston-logstash-udp",
@@ -8,7 +8,8 @@
         "test": "mocha test/*_test.js"
     },
     "engines": {
-        "node": ">=0.8.x"
+        "node": ">=0.8.x",
+        "npm" : ">=1.4.6"
     },
     "repository": {
         "type": "git",
@@ -21,7 +22,8 @@
         "winston": ">=0.7.2",
         "mocha": ">=1.8.2",
         "chai": ">=1.5.0",
-        "timekeeper": ">=0.0.3"
+        "timekeeper": ">=0.0.3",
+        "sinon-chai": "~2.8.0"
     },
     "keywords": [
         "logging",
@@ -47,6 +49,10 @@
         {
             "name": "devAsterisk",
             "email": "asterisk@makeus.com"
+        },
+        {
+            "name": "Anis Safine",
+            "email": "anis@safine.me"
         }
     ],
     "maintainers": [
