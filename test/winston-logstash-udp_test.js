@@ -5,6 +5,7 @@ var chai = require('chai'),
     dgram = require('dgram'),
     winston = require('winston'),
     timekeeper = require('timekeeper'),
+    os = require('os'),
     freezed_time = new Date(1330688329321);
 
 chai.Assertion.includeStack = true;
@@ -80,20 +81,39 @@ describe('winston-logstash-udp transport', function () {
             logger.log('info', 'hello world', {stream: 'sample'});
         });
 
-        it('add trailing line-feed if the option is on', function (done) {
-            var logger = createLogger(
-                port,
-                {
-                    trailingLineFeed: true
-                }
-            );
+        describe('with the option \'trailing line-feed\' on', function () {
+            it('add operating system\'s default EndOfLine character as trailing line-feed, by default', function (done) {
+                var logger = createLogger(
+                    port,
+                    {
+                        trailingLineFeed: true
+                    }
+                );
 
-            test_server = createTestServer(port, function (data) {
-                expect(data.toString().slice(-1)).to.be.eql("\n");
-                done();
+                test_server = createTestServer(port, function (data) {
+                    expect(data.toString().slice(-1)).to.be.eql(os.EOL);
+                    done();
+                });
+
+                logger.log('info', 'hello world', {stream: 'sample'});
             });
 
-            logger.log('info', 'hello world', {stream: 'sample'});
+            it('add a specific character as trailing line-feed, if set in options', function (done) {
+                var logger = createLogger(
+                    port,
+                    {
+                        trailingLineFeed: true,
+                        trailingLineFeedChar: "\r\n"
+                    }
+                );
+
+                test_server = createTestServer(port, function (data) {
+                    expect(data.toString().slice(-2)).to.be.eql("\r\n");
+                    done();
+                });
+
+                logger.log('info', 'hello world', {stream: 'sample'});
+            });
         });
 
         // Teardown
