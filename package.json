@@ -49,6 +49,10 @@
         {
             "name": "devAsterisk",
             "email": "asterisk@makeus.com"
+        },
+        {
+            "name": "Anis Safine",
+            "email": "anis@safine.me"
         }
     ],
     "maintainers": [
