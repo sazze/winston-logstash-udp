@@ -72,6 +72,12 @@ Troubleshooting
   npm install -g npm@~1.4.6
   ```
 
+  Another way around is to simply avoid installing the development dependencies:
+
+  ```
+  npm install --production
+  ```
+
 ====================
 
 #### Author: [Craig Thayer](https://github.com/sazze)
