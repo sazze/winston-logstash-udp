@@ -1,6 +1,6 @@
 {
     "name": "winston-logstash-udp",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "A Logstash UDP transport for winston",
     "main": "./lib/winston-logstash-udp",
     "homepage": "https://github.com/sazze/winston-logstash-udp",
@@ -16,6 +16,7 @@
         "url": "https://github.com/sazze/winston-logstash-udp.git"
     },
     "dependencies": {
+        "cycle": "^1.0.3",
         "winston": ">=0.7.2"
     },
     "devDependencies": {
@@ -53,6 +54,10 @@
         {
             "name": "Anis Safine",
             "email": "anis@safine.me"
+        },
+        {
+            "name": "Pierre Inglebert",
+            "email": "pierre.inglebert@gmail.com"
         }
     ],
     "maintainers": [
