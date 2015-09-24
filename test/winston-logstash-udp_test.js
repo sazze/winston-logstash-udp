@@ -137,4 +137,16 @@ describe('winston-logstash-udp transport', function () {
 
     });
 
+    describe('without logstash server', function () {
+        it('emit an error message if UDP DNS errors occur on the socket', function (done) {
+            var logger = createLogger(port, {host:'unresolvedhost'});
+
+            logger.transports.logstashUdp.on('error', function (err) {
+                expect(err).to.be.an.instanceof(Error);
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+    });
 });
