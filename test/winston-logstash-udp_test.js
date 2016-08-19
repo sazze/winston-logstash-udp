@@ -75,7 +75,10 @@ describe('winston-logstash-udp transport', function () {
         it('send logs over UDP as valid json', function (done) {
             var response;
             var logger = createLogger(port);
-            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+            var expected = {
+              "@fields": {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info"},
+              "@message": "hello world"
+            };
 
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
