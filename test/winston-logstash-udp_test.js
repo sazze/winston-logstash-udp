@@ -77,6 +77,7 @@ describe('winston-logstash-udp transport', function () {
             var logger = createLogger(port);
             var expected = {
               "@version": "1",
+              "@metadata": {},
               "application": "test",
               "host": "localhost",
               "level": "info",
