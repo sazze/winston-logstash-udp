@@ -238,7 +238,6 @@ describe('winston-logstash-udp transport', function () {
             var logger = createLogger(port, {host: 'unresolvedhost'});
 
             logger.log('info', 'hello world', {stream: 'sample'}, function (err) {
-                console.log(err);
                 expect(err).to.be.an.instanceof(Error);
                 done();
             });
