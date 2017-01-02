@@ -49,10 +49,13 @@ const server = createTestServer(9999);
 const creator = createLogger(9999);
 const logger = creator(winston.transports.LogstashUDP);
 
-suite.add('logging with close after each', {
+suite.add('logging with close after timeout', {
   defer: true,
   fn(deferred) {
-    logger.log('info', 'hello world', { stream: 'sample' }, () => deferred.resolve());
+    logger.log('info', 'hello world', { stream: 'sample' }, (err) => {
+      if (err) return deferred.reject();
+      deferred.resolve()
+    });
   }
 });
 
