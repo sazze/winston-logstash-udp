@@ -11,7 +11,7 @@ var chai = require('chai'),
     common = require('winston/lib/winston/common'),
     freezed_time = new Date(1330688329321);
 
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.should();
 chai.use(sinonChai);
 
@@ -80,6 +80,22 @@ describe('winston-logstash-udp transport', function () {
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('After each log the disconnect method invoked', function (done) {
+            var response;
+            var logger = createLogger(port);
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+            var disconnectSpy = sinon.spy(logger.transports.logstashUdp, 'disconnect');
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                expect(disconnectSpy).to.have.been.called;
                 done();
             });
 
