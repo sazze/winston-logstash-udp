@@ -86,22 +86,6 @@ describe('winston-logstash-udp transport', function () {
             logger.log('info', 'hello world', {stream: 'sample'});
         });
 
-        it('After each log the disconnect method invoked', function (done) {
-            var response;
-            var logger = createLogger(port);
-            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
-            var disconnectSpy = sinon.spy(logger.transports.logstashUdp, 'disconnect');
-
-            test_server = createTestServer(port, function (data) {
-                response = JSON.parse(data);
-                expect(response).to.be.eql(expected);
-                expect(disconnectSpy).to.have.been.called;
-                done();
-            });
-
-            logger.log('info', 'hello world', {stream: 'sample'});
-        });
-
         describe('with the option \'trailing line-feed\' on', function () {
             it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
                 var logger = createLogger(
