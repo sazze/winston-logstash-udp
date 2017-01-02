@@ -5,7 +5,6 @@ const dgram = require('dgram');
 const winston = require('winston');
 
 require('../lib/winston-logstash-udp');
-require('./winston-logstash-udp-legacy');
 
 function createTestServer(port) {
   const server = dgram.createSocket('udp4');
