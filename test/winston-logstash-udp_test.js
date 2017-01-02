@@ -11,7 +11,7 @@ var chai = require('chai'),
     common = require('winston/lib/winston/common'),
     freezed_time = new Date(1330688329321);
 
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.should();
 chai.use(sinonChai);
 
