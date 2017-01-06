@@ -87,23 +87,19 @@ describe('winston-logstash-udp transport', function () {
             logger.log('info', 'hello world', {stream: 'sample'});
         });
 
-        it('send logs over UDP as valid json after timeout is closed the connection', function (done) {
+        it('send logs over UDP as valid json after disconnect', function (done) {
             var response;
-            var logger = createLogger(port, { timeout: 50 });
+            var logger = createLogger(port);
             var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
-
-            var disconnectSpy = sinon.spy(logger.transports.logstashUdp, "disconnect");
 
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
-                expect(disconnectSpy).to.be.called;
                 done();
             });
-
-            setTimeout(function(){
-                logger.log('info', 'hello world', {stream: 'sample'});
-            }, 100);
+            
+            logger.transports.logstashUdp.disconnect();
+            logger.log('info', 'hello world', {stream: 'sample'});
         });
 
         it('set timeout to close connection', function (done) {
