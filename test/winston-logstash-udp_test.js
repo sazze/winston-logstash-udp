@@ -11,7 +11,7 @@ var chai = require('chai'),
     common = require('winston/lib/winston/common'),
     freezed_time = new Date(1330688329321);
 
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.should();
 chai.use(sinonChai);
 
@@ -46,7 +46,8 @@ describe('winston-logstash-udp transport', function () {
             port: port,
             appName: 'test',
             localhost: 'localhost',
-            pid: 12345
+            pid: 12345,
+            timeout: 0,
         },
         options = options || {},
         field;
@@ -80,6 +81,59 @@ describe('winston-logstash-udp transport', function () {
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('send logs over UDP as valid json after disconnect', function (done) {
+            var response;
+            var logger = createLogger(port);
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                done();
+            });
+            
+            logger.transports.logstashUdp.disconnect();
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('set timeout to close connection', function (done) {
+            var response;
+            var logger = createLogger(port, {
+                timeout: 1000,
+            });
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            var setTimeoutSpy = sinon.spy(logger.transports.logstashUdp, "setTimeout");
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                expect(setTimeoutSpy).to.be.called;
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('not using timeout to close connection', function (done) {
+            var response;
+            var logger = createLogger(port, {
+                timeout: 0,
+            });
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            var setTimeoutSpy = sinon.spy(logger.transports.logstashUdp, "setTimeout");
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                expect(setTimeoutSpy).not.to.be.called;
                 done();
             });
 
