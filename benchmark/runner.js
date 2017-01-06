@@ -1,14 +1,14 @@
 'use strict';
 
-const Benchmark = require('benchmark');
-const dgram = require('dgram');
-const winston = require('winston');
+var Benchmark = require('benchmark');
+var dgram = require('dgram');
+var winston = require('winston');
 
 require('../lib/winston-logstash-udp');
 
 function createTestServer(port) {
-  const server = dgram.createSocket('udp4');
-  let counter = 0;
+  var server = dgram.createSocket('udp4');
+  var counter = 0;
 
   server.on("error", function (err) {
     console.log("server error:\n" + err.stack);
@@ -32,7 +32,8 @@ function createLogger(port) {
       port: port,
       appName: 'test',
       localhost: 'localhost',
-      pid: 12345
+      pid: 12345,
+      timeout: 1000,
     };
 
     return new (winston.Logger)({
@@ -43,16 +44,16 @@ function createLogger(port) {
   };
 };
 
-const suite = new Benchmark.Suite('Winston UDP Transport');
+var suite = new Benchmark.Suite('Winston UDP Transport');
 
-const server = createTestServer(9999);
-const creator = createLogger(9999);
-const logger = creator(winston.transports.LogstashUDP);
+var server = createTestServer(9999);
+var creator = createLogger(9999);
+var logger = creator(winston.transports.LogstashUDP);
 
 suite.add('logging with close after timeout', {
   defer: true,
   fn(deferred) {
-    logger.log('info', 'hello world', { stream: 'sample' }, (err) => {
+    logger.log('info', 'hello world', { stream: 'sample' }, function(err) {
       if (err) return deferred.reject();
       deferred.resolve()
     });
@@ -68,4 +69,4 @@ suite.on('complete', function () {
   server.close();
 });
 
-process.nextTick(() => suite.run());
+process.nextTick(function(){ suite.run() });
