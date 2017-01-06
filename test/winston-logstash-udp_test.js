@@ -46,7 +46,8 @@ describe('winston-logstash-udp transport', function () {
             port: port,
             appName: 'test',
             localhost: 'localhost',
-            pid: 12345
+            pid: 12345,
+            timeout: 0,
         },
         options = options || {},
         field;
@@ -80,6 +81,44 @@ describe('winston-logstash-udp transport', function () {
             test_server = createTestServer(port, function (data) {
                 response = JSON.parse(data);
                 expect(response).to.be.eql(expected);
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('set timeout to close connection', function (done) {
+            var response;
+            var logger = createLogger(port, {
+                timeout: 1000,
+            });
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            var setTimeoutSpy = sinon.spy(logger.transports.logstashUdp, "setTimeout");
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                expect(setTimeoutSpy).to.be.called;
+                done();
+            });
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        it('not using timeout to close connection', function (done) {
+            var response;
+            var logger = createLogger(port, {
+                timeout: 0,
+            });
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            var setTimeoutSpy = sinon.spy(logger.transports.logstashUdp, "setTimeout");
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                expect(setTimeoutSpy).not.to.be.called;
                 done();
             });
 
