@@ -24,6 +24,7 @@
         "mocha": ">=1.8.2",
         "chai": ">=1.5.0",
         "timekeeper": ">=0.0.3",
+        "sinon": "*",
         "sinon-chai": "~2.8.0"
     },
     "keywords": [
