@@ -14,7 +14,7 @@ var chai = require('chai'),
     testingPort = 9988
     ;
 
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.should();
 chai.use(sinonChai);
 
