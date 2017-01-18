@@ -149,89 +149,92 @@ describe('winston-logstash-udp transport', function () {
 
     });
 
-    describe('with logstash server (udp6)', function () {
-        var test_server, port = testingPort;
+    //TODO: run IPv6 tests in travis when it supports it (at the time of this comment it does not)
+    if (!process.env.TRAVIS) {
+        describe('with logstash server (udp6)', function () {
+            var test_server, port = testingPort;
 
-        beforeEach(function (done) {
-            timekeeper.freeze(freezed_time);
-            done();
-        });
-
-        it('send logs over UDP as valid json', function (done) {
-            var response;
-            var logger = createLogger(port, {
-                udpType : 'udp6'
-            });
-            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
-
-            test_server = createTestServer(port, function (data) {
-                response = JSON.parse(data);
-                expect(response).to.be.eql(expected);
+            beforeEach(function (done) {
+                timekeeper.freeze(freezed_time);
                 done();
-            }, 'udp6');
-
-            logger.log('info', 'hello world', {stream: 'sample'});
-        });
-
-        describe('with the option \'trailing line-feed\' on', function () {
-
-            before(function () {
-                commonLogStored = common.log;
-                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
             });
 
-            it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
-                var logger = createLogger(
-                    port,
-                    {
-                        trailingLineFeed: true,
-                        udpType : 'udp6'
-                    }
-                );
-
-                test_server = createTestServer(port, function (data) {
-                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL);
-                    done();
-                }, 'udp6');
-
-                logger.log('info', 'hello world', {stream: 'sample'});
-            });
-
-            it('if set in the options, remove all trailing blank characters and replace them with a custom character', function (done) {
-                var logger = createLogger(
-                    port,
-                    {
-                        trailingLineFeed: true,
-                        trailingLineFeedChar: os.EOL + "\n",
-                        udpType : 'udp6'
-                    }
-                );
-
-                test_server = createTestServer(port, function (data) {
-                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL + "\n");
-                    done();
-                }, 'udp6');
-
-                logger.log('info', 'hello world', {stream: 'sample'});
-            });
-
-            after(function () {
-                common.log = commonLogStored;
-            });
-
-        });
-
-        // Teardown
-        afterEach(function () {
-            if (test_server) {
-                test_server.close(function () {
+            it('send logs over UDP as valid json', function (done) {
+                var response;
+                var logger = createLogger(port, {
+                    udpType : 'udp6'
                 });
-            }
-            timekeeper.reset();
-            test_server = null;
-        });
+                var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
 
-    });
+                test_server = createTestServer(port, function (data) {
+                    response = JSON.parse(data);
+                    expect(response).to.be.eql(expected);
+                    done();
+                }, 'udp6');
+
+                logger.log('info', 'hello world', {stream: 'sample'});
+            });
+
+            describe('with the option \'trailing line-feed\' on', function () {
+
+                before(function () {
+                    commonLogStored = common.log;
+                    common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
+                });
+
+                it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
+                    var logger = createLogger(
+                        port,
+                        {
+                            trailingLineFeed: true,
+                            udpType : 'udp6'
+                        }
+                    );
+
+                    test_server = createTestServer(port, function (data) {
+                        expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL);
+                        done();
+                    }, 'udp6');
+
+                    logger.log('info', 'hello world', {stream: 'sample'});
+                });
+
+                it('if set in the options, remove all trailing blank characters and replace them with a custom character', function (done) {
+                    var logger = createLogger(
+                        port,
+                        {
+                            trailingLineFeed: true,
+                            trailingLineFeedChar: os.EOL + "\n",
+                            udpType : 'udp6'
+                        }
+                    );
+
+                    test_server = createTestServer(port, function (data) {
+                        expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL + "\n");
+                        done();
+                    }, 'udp6');
+
+                    logger.log('info', 'hello world', {stream: 'sample'});
+                });
+
+                after(function () {
+                    common.log = commonLogStored;
+                });
+
+            });
+
+            // Teardown
+            afterEach(function () {
+                if (test_server) {
+                    test_server.close(function () {
+                    });
+                }
+                timekeeper.reset();
+                test_server = null;
+            });
+
+        });
+    }
 
     describe('without logstash server', function () {
         it('return an error message if UDP DNS errors occur on the socket', function (done) {
