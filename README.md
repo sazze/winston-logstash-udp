@@ -16,13 +16,13 @@ Recommended method:
         LogstashUDP = require('winston-logstash-udp').LogstashUDP;
 
     var logger = new(winston.Logger)({
-      transports: [{
+      transports: [
         new(LogstashUDP)({
           port: 9999,
           appName: 'my application name',
           host: '127.0.0.1'
         })
-      }]
+      ]
     });
 ```
 
