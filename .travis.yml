@@ -1,5 +1,7 @@
 language: node_js
+sudo: required
 node_js:
+  - "7.0"
   - "4.1"
   - "4.0"
   - "0.12"

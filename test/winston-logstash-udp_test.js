@@ -9,7 +9,10 @@ var chai = require('chai'),
     timekeeper = require('timekeeper'),
     os = require('os'),
     common = require('winston/lib/winston/common'),
-    freezed_time = new Date(1330688329321);
+    freezed_time = new Date(1330688329321),
+
+    testingPort = 9988
+    ;
 
 chai.config.includeStack = true;
 chai.should();
@@ -18,10 +21,11 @@ chai.use(sinonChai);
 require('../lib/winston-logstash-udp');
 
 describe('winston-logstash-udp transport', function () {
-    var test_server, port = 9999;
+    var test_server, commonLogStored, port = testingPort;
 
-    function createTestServer(port, onMessage) {
-        var server = dgram.createSocket('udp4');
+    function createTestServer(port, onMessage, udpType) {
+        udpType = udpType || 'udp4';
+        var server = dgram.createSocket(udpType);
 
         server.on("error", function (err) {
             console.log("server error:\n" + err.stack);
@@ -64,8 +68,8 @@ describe('winston-logstash-udp transport', function () {
         });
     }
 
-    describe('with logstash server', function () {
-        var test_server, port = 9999;
+    describe('with logstash server (udp4)', function () {
+        var test_server, port = testingPort;
 
         beforeEach(function (done) {
             timekeeper.freeze(freezed_time);
@@ -87,6 +91,12 @@ describe('winston-logstash-udp transport', function () {
         });
 
         describe('with the option \'trailing line-feed\' on', function () {
+
+            before(function () {
+                commonLogStored = common.log;
+                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
+            });
+
             it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
                 var logger = createLogger(
                     port,
@@ -114,8 +124,6 @@ describe('winston-logstash-udp transport', function () {
                     }
                 );
 
-                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
-
                 test_server = createTestServer(port, function (data) {
                     expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL + "\n");
                     done();
@@ -123,6 +131,94 @@ describe('winston-logstash-udp transport', function () {
 
                 logger.log('info', 'hello world', {stream: 'sample'});
             });
+
+            after(function () {
+                common.log = commonLogStored;
+            });
+        });
+
+        // Teardown
+        afterEach(function () {
+            if (test_server) {
+                test_server.close(function () {
+                });
+            }
+            timekeeper.reset();
+            test_server = null;
+        });
+
+    });
+
+    describe('with logstash server (udp6)', function () {
+        var test_server, port = testingPort;
+
+        beforeEach(function (done) {
+            timekeeper.freeze(freezed_time);
+            done();
+        });
+
+        it('send logs over UDP as valid json', function (done) {
+            var response;
+            var logger = createLogger(port, {
+                udpType : 'udp6'
+            });
+            var expected = {"stream": "sample", "application": "test", "serverName": "localhost", "pid": 12345, "level": "info", "message": "hello world"};
+
+            test_server = createTestServer(port, function (data) {
+                response = JSON.parse(data);
+                expect(response).to.be.eql(expected);
+                done();
+            }, 'udp6');
+
+            logger.log('info', 'hello world', {stream: 'sample'});
+        });
+
+        describe('with the option \'trailing line-feed\' on', function () {
+
+            before(function () {
+                commonLogStored = common.log;
+                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
+            });
+
+            it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
+                var logger = createLogger(
+                    port,
+                    {
+                        trailingLineFeed: true,
+                        udpType : 'udp6'
+                    }
+                );
+
+                test_server = createTestServer(port, function (data) {
+                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL);
+                    done();
+                }, 'udp6');
+
+                logger.log('info', 'hello world', {stream: 'sample'});
+            });
+
+            it('if set in the options, remove all trailing blank characters and replace them with a custom character', function (done) {
+                var logger = createLogger(
+                    port,
+                    {
+                        trailingLineFeed: true,
+                        trailingLineFeedChar: os.EOL + "\n",
+                        udpType : 'udp6'
+                    }
+                );
+
+                test_server = createTestServer(port, function (data) {
+                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL + "\n");
+                    done();
+                }, 'udp6');
+
+                logger.log('info', 'hello world', {stream: 'sample'});
+            });
+
+            after(function () {
+                common.log = commonLogStored;
+            });
+
         });
 
         // Teardown
