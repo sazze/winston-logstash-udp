@@ -1,6 +1,6 @@
 {
     "name": "winston-logstash-udp",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "A Logstash UDP transport for winston",
     "main": "./lib/winston-logstash-udp",
     "homepage": "https://github.com/sazze/winston-logstash-udp",
@@ -20,10 +20,11 @@
         "winston": ">=1.1.2"
     },
     "devDependencies": {
-        "mocha": ">=1.8.2",
         "chai": ">=1.5.0",
-        "timekeeper": ">=0.0.3",
-        "sinon-chai": "~2.8.0"
+        "mocha": ">=1.8.2",
+        "sinon-chai": "~2.9.0",
+        "sinon": "~2.1.0",
+        "timekeeper": ">=0.0.3"
     },
     "keywords": [
         "logging",
