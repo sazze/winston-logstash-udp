@@ -1,73 +1,72 @@
 {
-    "name": "winston-logstash-udp",
-    "version": "0.2.3",
-    "description": "A Logstash UDP transport for winston",
-    "main": "./lib/winston-logstash-udp",
-    "homepage": "https://github.com/sazze/winston-logstash-udp",
-    "scripts": {
-        "test": "mocha test/*_test.js"
+  "name": "winston-logstash-udp",
+  "version": "0.3.5",
+  "description": "A Logstash UDP transport for Winston, forked from @sazze",
+  "homepage": "https://github.com/bringg/winston-logstash-udp",
+  "scripts": {
+    "test": "mocha test/*_test.js"
+  },
+  "engines": {
+    "node": ">=4.8.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sazze/winston-logstash-udp.git"
+  },
+  "dependencies": {
+    "winston": ">=1.1.2"
+  },
+  "devDependencies": {
+    "chai": ">=1.9.2 <4",
+    "mocha": ">=1.8.2",
+    "sinon-chai": "~2.9.0",
+    "sinon": "~2.1.0",
+    "timekeeper": ">=0.0.3"
+  },
+  "keywords": [
+    "logging",
+    "sysadmin",
+    "tools"
+  ],
+  "bugs": {
+    "url": "https://github.com/bringg/winston-logstash-udp/issues"
+  },
+  "author": {
+    "name": "Craig Thayer",
+    "email": "cthayer@sazze.com"
+  },
+  "license": "MIT",
+  "contributors": [
+    {
+      "name": "Alex Simenduev",
+      "email": "cthayer@sazze.com"
     },
-    "engines": {
-        "node": ">=0.8.x",
-        "npm" : ">=1.4.6"
+    {
+      "name": "mbrevoort"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/sazze/winston-logstash-udp.git"
+    {
+      "name": "devAsterisk",
+      "email": "asterisk@makeus.com"
     },
-    "dependencies": {
-        "cycle": "^1.0.3",
-        "winston": ">=1.1.2"
+    {
+      "name": "Anis Safine",
+      "email": "anis@safine.me"
     },
-    "devDependencies": {
-        "chai": ">=1.5.0",
-        "mocha": ">=1.8.2",
-        "sinon-chai": "~2.9.0",
-        "sinon": "~2.1.0",
-        "timekeeper": ">=0.0.3"
+    {
+      "name": "Pierre Inglebert",
+      "email": "pierre.inglebert@gmail.com"
     },
-    "keywords": [
-        "logging",
-        "sysadmin",
-        "tools"
-    ],
-    "bugs": {
-        "url": "https://github.com/sazze/winston-logstash-udp/issues"
+    {
+      "name": "Kevin Danielo",
+      "email": "danielo.kevin@gmail.com"
     },
-    "author": {
-        "name": "Craig Thayer",
-        "email": "cthayer@sazze.com"
-    },
-    "license": "MIT",
-    "contributors": [
-        {
-            "name": "Craig Thayer",
-            "email": "cthayer@sazze.com"
-        },
-        {
-            "name": "mbrevoort"
-        },
-        {
-            "name": "devAsterisk",
-            "email": "asterisk@makeus.com"
-        },
-        {
-            "name": "Anis Safine",
-            "email": "anis@safine.me"
-        },
-        {
-            "name": "Pierre Inglebert",
-            "email": "pierre.inglebert@gmail.com"
-        },
-        {
-            "name": "Kevin Danielo",
-            "email": "danielo.kevin@gmail.com"
-        }
-    ],
-    "maintainers": [
-        {
-            "name": "Craig Thayer",
-            "email": "cthayer@sazze.com"
-        }
-    ]
+    {
+      "name": "Bringg Engineering"
+    }
+  ],
+  "maintainers": [
+    {
+      "name": "Alex Simenduev"
+    }
+  ]
 }

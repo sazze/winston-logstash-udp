@@ -12,7 +12,6 @@
 // Really simple Winston Logstash UDP Logger
 
 var common = require('winston/lib/winston/common'),
-    cycle = require('cycle'),
     dgram = require('dgram'),
     dns = require('dns'),
     os = require('os'),
@@ -25,15 +24,22 @@ var LogstashUDP = exports.LogstashUDP = function(options) {
 
     this.name = 'logstashUdp';
     this.level = options.level || 'info';
-    this.localhost = options.localhost || os.hostname();
     this.host = options.host || '127.0.0.1';
-    this.port = options.port || 9999;
-    this.application = options.appName || process.title;
-    this.pid = options.pid || process.pid;
-    this.trailingLineFeed = options.trailingLineFeed === true;
-    this.trailingLineFeedChar = options.trailingLineFeedChar || os.EOL;
-    this.metadata = options.metadata || {};
+    this.port = options.port || 5043;
     this.connFlushInterval = (options.connFlushInterval && options.connFlushInterval >= 10000) ? options.connFlushInterval : 10000;
+
+    // prepare default meta object
+    this.meta_defaults = Object.assign(options.meta || {}, {
+        host: os.hostname(),
+        application: options.appName || process.title
+    })
+
+    // we want to avoid copy-by-reference for meta defaults, so make sure it's a flat object.
+    for (var property in this.meta_defaults) {
+        if (typeof this.meta_defaults[property] === 'object') {
+            delete this.meta_defaults[property];
+        }
+    }
 
     // non options parameters
     this.client = null;
@@ -43,7 +49,7 @@ var LogstashUDP = exports.LogstashUDP = function(options) {
     var self = this;
     setInterval(function() {
         // get ip address, which will stay static until next reconnect
-        // this is to avoid overloading dns server
+        // this is to avoid overloading DNS server
         dns.lookup(self.host, function(err, ip) {
             self.host_ip = (err) ? self.host : ip;
             try { self.client.close(); } catch(e) {} finally { self.client = null; }
@@ -71,22 +77,18 @@ LogstashUDP.prototype.connect = function() {
 };
 
 LogstashUDP.prototype.log = function(level, msg, meta, callback) {
-    var self = this,
-        meta = winston.clone(cycle.decycle(meta) || {}),
-        logEntry;
-
+    var self = this, logEntry;
     callback = (callback || function () {});
 
     if (self.silent) {
         return callback(null, true);
     }
 
-    meta['@timestamp'] = new Date().toISOString();
-    meta['@version'] = "1";
-    meta['@metadata'] = self.metadata;
-    meta['application'] = self.application;
-    meta['host'] = self.localhost;
-    meta['pid'] = self.pid;
+    var meta = Object.assign(meta || {}, this.meta_defaults, {
+        // required logstash fields
+        '@timestamp': new Date().toISOString(),
+        '@version': '1'
+    });
 
     logEntry = common.log({
         level: level,
@@ -97,19 +99,13 @@ LogstashUDP.prototype.log = function(level, msg, meta, callback) {
 
     self.sendLog(logEntry, function (err) {
         self.emit('logged', !err);
-
         callback(err, !err);
     });
 
 };
 
 LogstashUDP.prototype.sendLog = function(message, callback) {
-    if (this.trailingLineFeed === true) {
-        message = message.replace(/\s+$/, '') + this.trailingLineFeedChar;
-    }
-
-    var buf = new Buffer(message);
-
+    var buf = new Buffer(message.replace(/\s+$/, '') + os.EOL);
     callback = (callback || function () {});
 
     if (!this.client) this.connect();

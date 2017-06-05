@@ -11,11 +11,11 @@ var chai = require('chai'),
     common = require('winston/lib/winston/common'),
     freezed_time = new Date(1330688329321);
 
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 chai.should();
 chai.use(sinonChai);
 
-require('../lib/winston-logstash-udp');
+require('../');
 
 describe('winston-logstash-udp transport', function () {
     var test_server, port = 9999;
@@ -77,12 +77,10 @@ describe('winston-logstash-udp transport', function () {
             var logger = createLogger(port);
             var expected = {
               "@version": "1",
-              "@metadata": {},
               "application": "test",
-              "host": "localhost",
+              "host": os.hostname(),
               "level": "info",
               "message": "hello world",
-              "pid": 12345,
               "stream": "sample"
             };
 
@@ -97,43 +95,17 @@ describe('winston-logstash-udp transport', function () {
             logger.log('info', 'hello world', {stream: 'sample'});
         });
 
-        describe('with the option \'trailing line-feed\' on', function () {
-            it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
-                var logger = createLogger(
-                    port,
-                    {
-                        trailingLineFeed: true
-                    }
-                );
+        it('remove all trailing blank characters and replace them with the operating system\'s EOL character', function (done) {
+            var logger = createLogger(port);
 
-                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
+            common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
 
-                test_server = createTestServer(port, function (data) {
-                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL);
-                    done();
-                });
-
-                logger.log('info', 'hello world', {stream: 'sample'});
+            test_server = createTestServer(port, function (data) {
+                expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL);
+                done();
             });
 
-            it('if set in the options, remove all trailing blank characters and replace them with a custom character', function (done) {
-                var logger = createLogger(
-                    port,
-                    {
-                        trailingLineFeed: true,
-                        trailingLineFeedChar: os.EOL + "\n"
-                    }
-                );
-
-                common.log = sinon.stub().returns('{"what":"ever"}' + "\r\n\t ");
-
-                test_server = createTestServer(port, function (data) {
-                    expect(data.toString()).to.be.eql('{"what":"ever"}' + os.EOL + "\n");
-                    done();
-                });
-
-                logger.log('info', 'hello world', {stream: 'sample'});
-            });
+            logger.log('info', 'hello world', {stream: 'sample'});
         });
 
         // Teardown

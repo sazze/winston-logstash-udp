@@ -1,17 +1,29 @@
-winston-logstash-udp [![Build Status](https://travis-ci.org/sazze/winston-logstash-udp.png?branch=master)](https://travis-ci.org/sazze/winston-logstash-udp)
+winston-logstash-udp
 ====================
 
 A [Logstash][0] UDP transport for [winston][1].
 
-Based on a [gist][2] by [mbrevoort][3] and inspired by [winston-logstash][4].
+Forked from [sazze][5], which is based on a [gist][2] by [mbrevoort][3] and inspired by [winston-logstash][4].
 
-Usage
-====================
+## Usage
+
+### Configuration
+
+* `host`
+    * The host location of the logstash server.
+    * Default: `127.0.0.1`
+* `port`
+    * The host port to connect.
+    * Default: `5043`
+* `appName`
+    * The name of the application sending logs.
+    * Default: `process.title`
 
 ### Node
 
 Recommended method:
-``` js
+
+```js
     var winston = require('winston'),
         LogstashUDP = require('winston-logstash-udp').LogstashUDP;
 
@@ -27,7 +39,8 @@ Recommended method:
 ```
 
 Alternate method:
-``` js
+
+```js
     var winston = require('winston');
 
     //
@@ -44,45 +57,41 @@ Alternate method:
 ```
 
 ### Logstash
-``` ruby
+
+```ruby
     input {
       # Sample input over UDP
-      udp { format => "json" port => 9999 type => "sample" }
+      udp { codec => "json_lines" port => 5043 type => "sample" }
     }
     output {
       stdout { debug => true debug_format => "json"}
     }
 ```
 
-Run Tests
-====================
+## Run Tests
 
-```
+```sh
   npm test
 ```
 
-Troubleshooting
-====================
+## Troubleshooting
 
-* **I get an error when installing node packages *"ERR! Error: No compatible version found: assertion-error@'^1.0.1'"***
+**I get an error when installing node packages *"ERR! Error: No compatible version found: assertion-error@'^1.0.1'"***
 
-  If you are running a version of NodeJS less than or equal to 0.8, upgrading NPM to a version greater than or equal to 1.4.6 should solve this issue.
+If you are running a version of NodeJS less than or equal to 0.8, upgrading NPM to a version greater than or equal to 1.4.6 should solve this issue.
 
-  ```
-  npm install -g npm@~1.4.6
-  ```
+```sh
+npm install -g npm@~1.4.6
 
-  Another way around is to simply avoid installing the development dependencies:
+# another way around is to simply avoid installing the development dependencies:
+npm install --production
+```
 
-  ```
-  npm install --production
-  ```
+***
 
-====================
+**Author**: [Craig Thayer](https://github.com/sazze)
 
-#### Author: [Craig Thayer](https://github.com/sazze)
-
-#### License: MIT
+**License**: MIT
 
 See LICENSE for the full license text.
 
@@ -91,3 +100,4 @@ See LICENSE for the full license text.
 [2]: https://gist.github.com/mbrevoort/5848179
 [3]: https://gist.github.com/mbrevoort
 [4]: https://github.com/jaakkos/winston-logstash
+[5]: https://github.com/sazze/winston-logstash-udp
