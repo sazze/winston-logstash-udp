@@ -84,7 +84,7 @@ LogstashUDP.prototype.log = function(level, msg, meta, callback) {
         return callback(null, true);
     }
 
-    var meta = Object.assign(meta || {}, this.meta_defaults, {
+    var meta = Object.assign({}, meta || {}, this.meta_defaults, {
         // required logstash fields
         '@timestamp': new Date().toISOString(),
         '@version': '1'
