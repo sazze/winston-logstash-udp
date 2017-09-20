@@ -45,16 +45,18 @@ var LogstashUDP = exports.LogstashUDP = function(options) {
     this.client = null;
     this.host_ip = this.host;
 
-    // reconnect every specified interval to avoid stale connections
-    var self = this;
-    setInterval(function() {
-        // get ip address, which will stay static until next reconnect
-        // this is to avoid overloading DNS server
-        dns.lookup(self.host, function(err, ip) {
-            self.host_ip = (err) ? self.host : ip;
-            try { self.client.close(); } catch(e) {} finally { self.client = null; }
+    (flushConnLoop = () => {
+        // get ip address, which will stay static until next reconnect (to avoid overloading DNS server)
+        dns.lookup(this.host, (err, ip) => {
+            this.host_ip = (err) ? this.host : ip;
+
+            // flush connection every specified interval to avoid stale connections
+            setTimeout(() => {
+                try { this.client.close(); } catch(e) {} finally { this.client = null; }
+                flushConnLoop();
+            }, this.connFlushInterval);
         });
-    }, this.connFlushInterval);
+    })();
 };
 
 util.inherits(LogstashUDP, winston.Transport);
@@ -77,10 +79,10 @@ LogstashUDP.prototype.connect = function() {
 };
 
 LogstashUDP.prototype.log = function(level, msg, meta, callback) {
-    var self = this, logEntry;
+    var logEntry;
     callback = (callback || function () {});
 
-    if (self.silent) {
+    if (this.silent) {
         return callback(null, true);
     }
 
@@ -97,8 +99,8 @@ LogstashUDP.prototype.log = function(level, msg, meta, callback) {
         json: true
     });
 
-    self.sendLog(logEntry, function (err) {
-        self.emit('logged', !err);
+    this.sendLog(logEntry, (err) => {
+        this.emit('logged', !err);
         callback(err, !err);
     });
 
@@ -106,7 +108,7 @@ LogstashUDP.prototype.log = function(level, msg, meta, callback) {
 
 LogstashUDP.prototype.sendLog = function(message, callback) {
     var buf = new Buffer(message.replace(/\s+$/, '') + os.EOL);
-    callback = (callback || function () {});
+    callback = (callback || function() {});
 
     if (!this.client) this.connect();
     this.client.send(buf, 0, buf.length, this.port, this.host_ip, callback);
