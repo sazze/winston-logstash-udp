@@ -79,6 +79,30 @@ describe("winston-logstash-udp transport", function() {
 
     beforeEach(() => timekeeper.freeze(freezed_time));
 
+    it("handles non-objects in splat", async () => {
+      var logger = createLogger(port);
+      var expected = {
+        "@version": "1",
+        application: "test",
+        host: os.hostname(),
+        level: "info",
+        message: "hello world",
+      };
+
+      const logSent = new Promise(resolve => {
+        test_server = createTestServer(port, function(data) {
+          resolve(data);
+        });
+      });
+
+      logger.info("hello", "world", { meta_object1: true }, { meta_value2: 1 });
+
+      const response = JSON.parse(await logSent);
+      expect(response.message).to.eql('hello');
+      expect(response.meta_object1).to.eql(true);
+      expect(response.meta_value2).to.eql(1);
+    });
+
     it("send logs over UDP as valid json", async () => {
       var logger = createLogger(port);
       var expected = {

@@ -105,7 +105,14 @@ class LogstashUDP extends Transport {
   }
 
   _buildLog(info) {
-    const splat = (info[SPLAT] || []).reduce((acc, value) => Object.assign(acc, value), {});
+    const splat = (info[SPLAT] || []).reduce((acc, value) => {
+      if(value !== null && typeof value === 'object') {
+        return Object.assign(acc, value)
+      }
+
+			return acc;
+    }, {});
+
     const meta = Object.assign({}, splat || {}, this.meta_defaults);
 
     const data = {
@@ -120,7 +127,7 @@ class LogstashUDP extends Transport {
   }
 
   sendLog(message, callback) {
-    var buf = new Buffer(message.replace(/\s+$/, "") + os.EOL);
+    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
     callback = callback || NOOP;
 
     if (!this.client) this.connect();
