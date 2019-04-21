@@ -95,10 +95,9 @@ describe("winston-logstash-udp transport", function() {
         });
       });
 
-      logger.info("hello", "world", { meta_object1: true }, { meta_value2: 1 });
+      logger.info("hello", { meta_object1: true, meta_value2: 1 });
 
       const response = JSON.parse(await logSent);
-      expect(response.message).to.eql('hello');
       expect(response.meta_object1).to.eql(true);
       expect(response.meta_value2).to.eql(1);
     });
