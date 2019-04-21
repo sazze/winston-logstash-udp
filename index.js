@@ -105,15 +105,7 @@ class LogstashUDP extends Transport {
   }
 
   _buildLog(info) {
-    const splat = (info[SPLAT] || []).reduce((acc, value) => {
-      if(value !== null && typeof value === 'object') {
-        return Object.assign(acc, value)
-      }
-
-			return acc;
-    }, {});
-
-    const meta = Object.assign({}, splat || {}, this.meta_defaults);
+    const meta = Object.assign({}, info || {}, this.meta_defaults);
 
     const data = {
       ...meta,
