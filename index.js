@@ -105,7 +105,7 @@ class LogstashUDP extends Transport {
   }
 
   _buildLog(info) {
-    const meta = Object.assign({}, info || {}, this.meta_defaults);
+    const meta = Object.assign({}, info, this.meta_defaults);
 
     const data = {
       ...meta,
