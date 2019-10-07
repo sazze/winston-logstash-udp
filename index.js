@@ -14,11 +14,11 @@
 const dgram = require("dgram"),
   dns = require("dns"),
   os = require("os"),
-  util = require("util"),
   winston = require("winston"),
-  Transport = require("winston-transport");
+  Transport = require("winston-transport"),
+  debug = require("debug")("winston-logstash-udp");
 
-const { LEVEL, SPLAT } = require("triple-beam");
+const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
 
@@ -68,6 +68,7 @@ class LogstashUDP extends Transport {
         try {
           this.client.close();
         } catch (e) {
+          debug('Failed to close client', e);
         } finally {
           this.client = null;
         }
@@ -82,6 +83,7 @@ class LogstashUDP extends Transport {
     // Attach an error listener on the socket
     // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
     this.client.on("error", function(err) {
+      debug('dgram error', err);
       // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
       // we always pass a callback to send(), so it's safe to do nothing here
     });
@@ -94,14 +96,19 @@ class LogstashUDP extends Transport {
       return callback(null, true);
     }
 
-    this.sendLog(this._buildLog(info), err => {
-      if (err) {
-        this.emit("warn", err);
-      } else {
-        this.emit("logged", info);
-      }
-      callback();
-    });
+    try {
+      this.sendLog(this._buildLog(info), err => {
+        if (err) {
+          debug('received error while sending log', err);
+          this.emit("warn", err);
+        } else {
+          this.emit("logged", info);
+        }
+        callback();
+      });
+    } catch(error) {
+      debug('failed sending log', error);
+    }
   }
 
   _buildLog(info) {
