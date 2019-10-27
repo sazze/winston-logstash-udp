@@ -12,11 +12,11 @@
 // Really simple Winston Logstash UDP Logger
 
 const dgram = require("dgram"),
-  dns = require("dns"),
   os = require("os"),
   winston = require("winston"),
   Transport = require("winston-transport"),
-  fastq = require('fastq'),
+  fastq = require("fastq"),
+  dnsCacheLookup = require("dns-lookup-cache"),
   debug = require("debug")("winston-logstash-udp");
 
 const { LEVEL } = require("triple-beam");
@@ -34,8 +34,8 @@ class Sender {
 
   _connect() {
     this.client = dgram.createSocket({
-      type: 'udp4'
-      // TODO: put lookup function
+      type: 'udp4',
+      lookup: dnsCacheLookup
     });
 
     // Attach an error listener on the socket
@@ -55,14 +55,16 @@ class Sender {
   _send(message, callback) {
     var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
 
-    if (!this.client) this.connect();
+    if (!this.client) this._connect();
     this.client.send(buf, 0, buf.length, this.port, this.host, callback);
   }
 
   _onQueueEmpty() {
     // queue is empty, we can shutdown cleanly
-    this.client.close();
+    this.client.disconnect();
     this.client.unref();
+
+    this.client = null;
   }
 }
 
@@ -95,16 +97,16 @@ class LogstashUDP extends Transport {
       }
     }
 
-    this.sender = new Sender(this.host, this.port);
-    this._flushConnLoop();
+    this._refreshSenderLoop();
   }
 
-  async _flushConnLoop() {
+  _refreshSenderLoop() {
+    // refresh sender every specified interval to avoid stale connections
+    // just swap senders, and the old will clean eventually
     this.sender = new Sender(this.host, this.port);
     this.sender.initialize();
 
-    // flush connection every specified interval to avoid stale connections
-    setTimeout(() => this._flushConnLoop(), this.connFlushInterval);
+    setTimeout(() => this._refreshSenderLoop(), this.connFlushInterval);
   }
 
   log(info, callback = NOOP) {
@@ -112,8 +114,11 @@ class LogstashUDP extends Transport {
       return callback(null, true);
     }
 
+
     try {
-      this.sendLog(this._buildLog(info), err => {
+      const logMessage = this._buildLog(info);
+
+      this.sender.send(logMessage, err => {
         if (err) {
           debug('received error while sending log', err);
           this.emit("warn", err);
@@ -139,10 +144,6 @@ class LogstashUDP extends Transport {
     };
 
     return JSON.stringify(data);
-  }
-
-  sendLog(message, callback) {
-    this.sender.send(message, callback);
   }
 }
 
