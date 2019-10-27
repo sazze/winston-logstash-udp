@@ -12,15 +12,77 @@
 // Really simple Winston Logstash UDP Logger
 
 const dgram = require("dgram"),
-  dns = require("dns"),
   os = require("os"),
   winston = require("winston"),
   Transport = require("winston-transport"),
+  fastq = require("fastq"),
+  ReDNS = require("redns"),
   debug = require("debug")("winston-logstash-udp");
 
 const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
+
+const redns = new ReDNS();
+
+class Sender {
+  constructor(host, port) {
+    this.host = host;
+    this.port = port;
+    this.client = null;
+
+    this.queue = fastq(this, this._send, 1);
+  }
+
+  _connect() {
+    this.client = dgram.createSocket({
+      type: "udp4",
+      lookup: redns.lookup.bind(redns)
+    });
+
+    // Attach an error listener on the socket
+    // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
+    this.client.on("error", function(err) {
+      debug("dgram error", err);
+      // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
+      // we always pass a callback to send(), so it's safe to do nothing here
+    });
+  }
+
+  shutdown() {
+    // eventually all messages will be processed and this queue will be drained
+    // and then we can cleanly shutdown
+    //
+    // NOTICE: we are listening to drain and not empty, since empty is called imeediatly after we call the last item and don't guarantee it's finished
+    // drain is called after all jobs is processed.
+    this.queue.drain = this._closeClient.bind(this);
+  }
+
+  forceShutdown() {
+    this.queue.killAndDrain();
+    this._closeClient();
+  }
+
+  send(message, callback = NOOP) {
+    this.queue.push(message, callback);
+  }
+
+  _send(message, callback) {
+    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
+
+    if (!this.client) this._connect();
+    this.client.send(buf, 0, buf.length, this.port, this.host, callback);
+  }
+
+  _closeClient() {
+    if (this.client === null) return;
+
+    this.client.close();
+    this.client.unref();
+
+    this.client = null;
+  }
+}
 
 class LogstashUDP extends Transport {
   constructor(options) {
@@ -51,63 +113,54 @@ class LogstashUDP extends Transport {
       }
     }
 
-    // non options parameters
-    this.client = null;
-    this.host_ip = this.host;
-
-    this._flushConnLoop();
+    this._refreshSenderLoop();
   }
 
-  _flushConnLoop() {
-    // get ip address, which will stay static until next reconnect (to avoid overloading DNS server)
-    dns.lookup(this.host, (err, ip) => {
-      this.host_ip = err ? this.host : ip;
+  _refreshSenderLoop() {
+    if (this.sender) {
+      // clear the last sender
+      this.sender.shutdown();
+    }
 
-      // flush connection every specified interval to avoid stale connections
-      setTimeout(() => {
-        try {
-          this.client.close();
-        } catch (e) {
-          debug('Failed to close client', e);
-        } finally {
-          this.client = null;
-        }
-        this._flushConnLoop();
-      }, this.connFlushInterval);
-    });
+    // refresh sender every specified interval to avoid stale connections
+    // just swap senders, and the old will clean eventually
+    this.sender = new Sender(this.host, this.port);
+
+    this._refreshTimeoutId = setTimeout(
+      () => this._refreshSenderLoop(),
+      this.connFlushInterval
+    );
   }
 
-  connect() {
-    this.client = dgram.createSocket("udp4");
+  shutdown() {
+    if (this._refreshTimeoutId) {
+      clearTimeout(this._refreshTimeoutId);
+    }
 
-    // Attach an error listener on the socket
-    // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
-    this.client.on("error", function(err) {
-      debug('dgram error', err);
-      // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
-      // we always pass a callback to send(), so it's safe to do nothing here
-    });
+    if (this.sender) {
+      this.sender.forceShutdown();
+    }
   }
 
-  log(info, callback) {
-    callback = callback || NOOP;
-
+  log(info, callback = NOOP) {
     if (this.silent) {
       return callback(null, true);
     }
 
     try {
-      this.sendLog(this._buildLog(info), err => {
+      const logMessage = this._buildLog(info);
+
+      this.sender.send(logMessage, err => {
         if (err) {
-          debug('received error while sending log', err);
+          debug("received error while sending log", err);
           this.emit("warn", err);
         } else {
           this.emit("logged", info);
         }
         callback();
       });
-    } catch(error) {
-      debug('failed sending log', error);
+    } catch (error) {
+      debug("failed sending log", error);
     }
   }
 
@@ -123,14 +176,6 @@ class LogstashUDP extends Transport {
     };
 
     return JSON.stringify(data);
-  }
-
-  sendLog(message, callback) {
-    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
-    callback = callback || NOOP;
-
-    if (!this.client) this.connect();
-    this.client.send(buf, 0, buf.length, this.port, this.host_ip, callback);
   }
 }
 
