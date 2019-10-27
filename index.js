@@ -16,26 +16,28 @@ const dgram = require("dgram"),
   winston = require("winston"),
   Transport = require("winston-transport"),
   fastq = require("fastq"),
-  dnsCacheLookup = require("dns-lookup-cache"),
+  ReDNS = require("redns"),
   debug = require("debug")("winston-logstash-udp");
 
 const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
 
+const r = new ReDNS();
+
 class Sender {
   constructor(host, port) {
     this.host = host;
     this.port = port;
+    this.client = null;
 
     this.queue = fastq(this, this._send, 1);
-    this.queue.empty = this._onQueueEmpty.bind(this);
   }
 
   _connect() {
     this.client = dgram.createSocket({
       type: 'udp4',
-      lookup: dnsCacheLookup
+      lookup: r.lookup.bind(r)
     });
 
     // Attach an error listener on the socket
@@ -47,6 +49,18 @@ class Sender {
     });
 
   }
+
+  shutdown() {
+    // eventually all messages will be processed and this queue will be empty
+    // and then we can cleanly shutdown
+    this.queue.empty = this._onQueueEmpty.bind(this);
+  }
+
+  forceShutdown() {
+    this.queue.killAndDrain();
+    this._onQueueEmpty();
+  }
+
 
   send(message, callback = NOOP) {
     this.queue.push(message, callback);
@@ -60,8 +74,9 @@ class Sender {
   }
 
   _onQueueEmpty() {
-    // queue is empty, we can shutdown cleanly
-    this.client.disconnect();
+    if(this.client === null) return;
+
+    this.client.close();
     this.client.unref();
 
     this.client = null;
@@ -101,12 +116,26 @@ class LogstashUDP extends Transport {
   }
 
   _refreshSenderLoop() {
+    if (this.sender) {
+      // clear the last sender
+      this.sender.shutdown();
+    }
+
     // refresh sender every specified interval to avoid stale connections
     // just swap senders, and the old will clean eventually
     this.sender = new Sender(this.host, this.port);
-    this.sender.initialize();
 
-    setTimeout(() => this._refreshSenderLoop(), this.connFlushInterval);
+    this._refreshTimeoutId = setTimeout(() => this._refreshSenderLoop(), this.connFlushInterval);
+  }
+
+  shutdown() {
+    if (this._refreshTimeoutId) {
+      clearTimeout(this._refreshTimeoutId);
+    }
+
+    if(this.sender) {
+      this.sender.forceShutdown();
+    }
   }
 
   log(info, callback = NOOP) {

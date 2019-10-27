@@ -20,10 +20,16 @@ require("../");
 
 describe("winston-logstash-udp transport", function() {
   var test_server,
-    port = 9999;
+    port = 9999,
+    transport = null;
+
+  afterEach(() => {
+    transport.shutdown();
+  })
 
   function createTestServer(port, onMessage) {
     var server = dgram.createSocket("udp4");
+    server.unref();
 
     server.on("error", function(err) {
       console.log("server error:\n" + err.stack);
@@ -31,11 +37,6 @@ describe("winston-logstash-udp transport", function() {
     });
 
     server.on("message", onMessage);
-
-    server.on("listening", function() {
-      var address = server.address();
-      console.log("server listening " + address.address + ":" + address.port);
-    });
 
     server.bind(port);
 
@@ -65,7 +66,7 @@ describe("winston-logstash-udp transport", function() {
       }
     }
 
-    const transport = new winston.transports.LogstashUDP(options);
+    transport = new winston.transports.LogstashUDP(options);
 
     return {
       logger: winston.createLogger({ transports: [transport] }),
@@ -74,8 +75,6 @@ describe("winston-logstash-udp transport", function() {
   }
 
   describe("with logstash server", function() {
-    var test_server,
-      port = 9999;
 
     beforeEach(() => timekeeper.freeze(freezed_time));
 
@@ -157,7 +156,7 @@ describe("winston-logstash-udp transport", function() {
       sinon.stub(transport, '_buildLog').returns('{"what":"ever"}' + "\r\n\t ");
 
       const logSent = new Promise(resolve => {
-        createTestServer(port, function(data) {
+        test_server = createTestServer(port, function(data) {
           resolve(data);
         });
       });
