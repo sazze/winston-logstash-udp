@@ -36,31 +36,29 @@ class Sender {
 
   _connect() {
     this.client = dgram.createSocket({
-      type: 'udp4',
+      type: "udp4",
       lookup: r.lookup.bind(r)
     });
 
     // Attach an error listener on the socket
     // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
     this.client.on("error", function(err) {
-      debug('dgram error', err);
+      debug("dgram error", err);
       // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
       // we always pass a callback to send(), so it's safe to do nothing here
     });
-
   }
 
   shutdown() {
     // eventually all messages will be processed and this queue will be empty
     // and then we can cleanly shutdown
-    this.queue.empty = this._onQueueEmpty.bind(this);
+    this.queue.empty = this._closeClient.bind(this);
   }
 
   forceShutdown() {
     this.queue.killAndDrain();
-    this._onQueueEmpty();
+    this._closeClient();
   }
-
 
   send(message, callback = NOOP) {
     this.queue.push(message, callback);
@@ -73,8 +71,8 @@ class Sender {
     this.client.send(buf, 0, buf.length, this.port, this.host, callback);
   }
 
-  _onQueueEmpty() {
-    if(this.client === null) return;
+  _closeClient() {
+    if (this.client === null) return;
 
     this.client.close();
     this.client.unref();
@@ -125,7 +123,10 @@ class LogstashUDP extends Transport {
     // just swap senders, and the old will clean eventually
     this.sender = new Sender(this.host, this.port);
 
-    this._refreshTimeoutId = setTimeout(() => this._refreshSenderLoop(), this.connFlushInterval);
+    this._refreshTimeoutId = setTimeout(
+      () => this._refreshSenderLoop(),
+      this.connFlushInterval
+    );
   }
 
   shutdown() {
@@ -133,7 +134,7 @@ class LogstashUDP extends Transport {
       clearTimeout(this._refreshTimeoutId);
     }
 
-    if(this.sender) {
+    if (this.sender) {
       this.sender.forceShutdown();
     }
   }
@@ -143,21 +144,20 @@ class LogstashUDP extends Transport {
       return callback(null, true);
     }
 
-
     try {
       const logMessage = this._buildLog(info);
 
       this.sender.send(logMessage, err => {
         if (err) {
-          debug('received error while sending log', err);
+          debug("received error while sending log", err);
           this.emit("warn", err);
         } else {
           this.emit("logged", info);
         }
         callback();
       });
-    } catch(error) {
-      debug('failed sending log', error);
+    } catch (error) {
+      debug("failed sending log", error);
     }
   }
 
