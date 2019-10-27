@@ -16,11 +16,55 @@ const dgram = require("dgram"),
   os = require("os"),
   winston = require("winston"),
   Transport = require("winston-transport"),
+  fastq = require('fastq'),
   debug = require("debug")("winston-logstash-udp");
 
 const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
+
+class Sender {
+  constructor(host, port) {
+    this.host = host;
+    this.port = port;
+
+    this.queue = fastq(this, this._send, 1);
+    this.queue.empty = this._onQueueEmpty.bind(this);
+  }
+
+  _connect() {
+    this.client = dgram.createSocket({
+      type: 'udp4'
+      // TODO: put lookup function
+    });
+
+    // Attach an error listener on the socket
+    // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
+    this.client.on("error", function(err) {
+      debug('dgram error', err);
+      // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
+      // we always pass a callback to send(), so it's safe to do nothing here
+    });
+
+  }
+
+  send(message, callback = NOOP) {
+    this.queue.push(message, callback);
+  }
+
+  _send(message, callback) {
+    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
+
+    if (!this.client) this.connect();
+    this.client.send(buf, 0, buf.length, this.port, this.host, callback);
+  }
+
+  _onQueueEmpty() {
+    // queue is empty, we can shutdown cleanly
+    this.client.close();
+    this.client.unref();
+  }
+}
 
 class LogstashUDP extends Transport {
   constructor(options) {
@@ -51,47 +95,19 @@ class LogstashUDP extends Transport {
       }
     }
 
-    // non options parameters
-    this.client = null;
-    this.host_ip = this.host;
-
+    this.sender = new Sender(this.host, this.port);
     this._flushConnLoop();
   }
 
-  _flushConnLoop() {
-    // get ip address, which will stay static until next reconnect (to avoid overloading DNS server)
-    dns.lookup(this.host, (err, ip) => {
-      this.host_ip = err ? this.host : ip;
+  async _flushConnLoop() {
+    this.sender = new Sender(this.host, this.port);
+    this.sender.initialize();
 
-      // flush connection every specified interval to avoid stale connections
-      setTimeout(() => {
-        try {
-          this.client.close();
-        } catch (e) {
-          debug('Failed to close client', e);
-        } finally {
-          this.client = null;
-        }
-        this._flushConnLoop();
-      }, this.connFlushInterval);
-    });
+    // flush connection every specified interval to avoid stale connections
+    setTimeout(() => this._flushConnLoop(), this.connFlushInterval);
   }
 
-  connect() {
-    this.client = dgram.createSocket("udp4");
-
-    // Attach an error listener on the socket
-    // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
-    this.client.on("error", function(err) {
-      debug('dgram error', err);
-      // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
-      // we always pass a callback to send(), so it's safe to do nothing here
-    });
-  }
-
-  log(info, callback) {
-    callback = callback || NOOP;
-
+  log(info, callback = NOOP) {
     if (this.silent) {
       return callback(null, true);
     }
@@ -126,11 +142,7 @@ class LogstashUDP extends Transport {
   }
 
   sendLog(message, callback) {
-    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
-    callback = callback || NOOP;
-
-    if (!this.client) this.connect();
-    this.client.send(buf, 0, buf.length, this.port, this.host_ip, callback);
+    this.sender.send(message, callback);
   }
 }
 
