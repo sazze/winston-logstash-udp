@@ -23,7 +23,7 @@ const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
 
-const r = new ReDNS();
+const redns = new ReDNS();
 
 class Sender {
   constructor(host, port) {
@@ -37,7 +37,7 @@ class Sender {
   _connect() {
     this.client = dgram.createSocket({
       type: "udp4",
-      lookup: r.lookup.bind(r)
+      lookup: redns.lookup.bind(r)
     });
 
     // Attach an error listener on the socket
