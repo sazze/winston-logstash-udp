@@ -44,11 +44,13 @@ class Sender {
 
     // Attach an error listener on the socket
     // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
-    this.client.on("error", function(err) {
-      debug("dgram error", err);
-      // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
-      // we always pass a callback to send(), so it's safe to do nothing here
-    });
+    this.client.on("error", this._clientErrorHandler);
+  }
+
+  _clientErrorHandler() {
+    debug("dgram error", err);
+    // in node versions <= 0.12, the error event is emitted even when a callback is passed to send()
+    // we always pass a callback to send(), so it's safe to do nothing here
   }
 
   shutdown() {
@@ -57,12 +59,11 @@ class Sender {
     //
     // NOTICE: we are listening to drain and not empty, since empty is called imeediatly after we call the last item and don't guarantee it's finished
     // drain is called after all jobs is processed.
-    this.queue.drain = this._closeClient.bind(this);
+    this.queue.drain = this.dispose.bind(this);
   }
 
   forceShutdown() {
-    this.queue.killAndDrain();
-    this._closeClient();
+    this.dispose();
   }
 
   send(message, callback = NOOP) {
@@ -82,13 +83,17 @@ class Sender {
     this.client.send(buf, 0, buf.length, this.port, this.host, callback);
   }
 
-  _closeClient() {
+  dispose() {
     if (this.client === null) return;
 
+    this.client.off("error", this._clientErrorHandler);
     this.client.close();
     this.client.unref();
 
     this.client = null;
+
+    this.queue.kill();
+    this.queue = null;
   }
 }
 
