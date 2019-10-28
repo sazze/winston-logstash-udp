@@ -25,7 +25,7 @@ describe("winston-logstash-udp transport", function() {
 
   afterEach(() => {
     transport.shutdown();
-  })
+  });
 
   function createTestServer(port, onMessage) {
     var server = dgram.createSocket("udp4");
@@ -75,7 +75,6 @@ describe("winston-logstash-udp transport", function() {
   }
 
   describe("with logstash server", function() {
-
     beforeEach(() => timekeeper.freeze(freezed_time));
 
     it("handles non-objects in splat", async () => {
@@ -85,7 +84,7 @@ describe("winston-logstash-udp transport", function() {
         application: "test",
         host: os.hostname(),
         level: "info",
-        message: "hello world",
+        message: "hello world"
       };
 
       const logSent = new Promise(resolve => {
@@ -108,7 +107,7 @@ describe("winston-logstash-udp transport", function() {
         application: "test",
         host: os.hostname(),
         level: "info",
-        message: "hello world",
+        message: "hello world"
       };
 
       const logSent = new Promise(resolve => {
@@ -151,9 +150,9 @@ describe("winston-logstash-udp transport", function() {
     });
 
     it("remove all trailing blank characters and replace them with the operating system's EOL character", async () => {
-      const {logger, transport} = createLoggerWithTransport(port);
+      const { logger, transport } = createLoggerWithTransport(port);
 
-      sinon.stub(transport, '_buildLog').returns('{"what":"ever"}' + "\r\n\t ");
+      sinon.stub(transport, "_buildLog").returns('{"what":"ever"}' + "\r\n\t ");
 
       const logSent = new Promise(resolve => {
         test_server = createTestServer(port, function(data) {

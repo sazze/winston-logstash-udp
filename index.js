@@ -16,14 +16,13 @@ const dgram = require("dgram"),
   winston = require("winston"),
   Transport = require("winston-transport"),
   fastq = require("fastq"),
-  ReDNS = require("redns"),
-  debug = require("debug")("winston-logstash-udp");
+  dns = require("dns"),
+  debug = require("debug")("winston-logstash-udp"),
+  asyncDnsLookup = require("util").promisify(dns.lookup);
 
 const { LEVEL } = require("triple-beam");
 
 const NOOP = () => {};
-
-const redns = new ReDNS();
 
 class Sender {
   constructor(host, port) {
@@ -34,11 +33,14 @@ class Sender {
     this.queue = fastq(this, this._send, 1);
   }
 
-  _connect() {
-    this.client = dgram.createSocket({
-      type: "udp4",
-      lookup: redns.lookup.bind(redns)
-    });
+  async _connect() {
+    try {
+      this.host = (await asyncDnsLookup(this.host, 4)).address;
+    } catch (err) {
+      debug(`Sender._connect failed looking up host ${this.host}`, err);
+    }
+
+    this.client = dgram.createSocket("udp4");
 
     // Attach an error listener on the socket
     // It can also avoid top level exceptions like UDP DNS errors thrown by the socket
@@ -67,10 +69,16 @@ class Sender {
     this.queue.push(message, callback);
   }
 
-  _send(message, callback) {
+  async _send(message, callback) {
     var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
 
-    if (!this.client) this._connect();
+    try {
+      if (!this.client) await this._connect();
+    } catch (err) {
+      debug(`Sender._send failed connecting`, err);
+      return callback(err, null);
+    }
+
     this.client.send(buf, 0, buf.length, this.port, this.host, callback);
   }
 
