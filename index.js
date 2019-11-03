@@ -54,12 +54,16 @@ class Sender {
   }
 
   shutdown() {
-    // eventually all messages will be processed and this queue will be drained
-    // and then we can cleanly shutdown
-    //
-    // NOTICE: we are listening to drain and not empty, since empty is called imeediatly after we call the last item and don't guarantee it's finished
-    // drain is called after all jobs is processed.
-    this.queue.drain = this.dispose.bind(this);
+    if (this.queue.idle()) {
+      this.dispose();
+    } else {
+      // eventually all messages will be processed and this queue will be drained
+      // and then we can cleanly shutdown
+      //
+      // NOTICE: we are listening to drain and not empty, since empty is called imeediatly after we call the last item and don't guarantee it's finished
+      // drain is called after all jobs is processed.
+      this.queue.drain = this.dispose.bind(this);
+    }
   }
 
   forceShutdown() {
@@ -130,14 +134,16 @@ class LogstashUDP extends Transport {
   }
 
   _refreshSenderLoop() {
-    if (this.sender) {
-      // clear the last sender
-      this.sender.shutdown();
-    }
+    const oldSender = this.sender;
 
     // refresh sender every specified interval to avoid stale connections
     // just swap senders, and the old will clean eventually
     this.sender = new Sender(this.host, this.port);
+
+    if (oldSender) {
+      // clear the old sender
+      oldSender.shutdown();
+    }
 
     this._refreshTimeoutId = setTimeout(
       () => this._refreshSenderLoop(),
