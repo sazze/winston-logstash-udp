@@ -14,7 +14,7 @@
     "url": "https://github.com/sazze/winston-logstash-udp.git"
   },
   "dependencies": {
-    "debug": "^4.1.1",
+    "debug": "^4.2.0",
     "fastq": "^1.8.0",
     "triple-beam": "^1.3.0",
     "winston": "^3.0.0",
