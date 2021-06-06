@@ -25,7 +25,7 @@
     "mocha": "^8.4.0",
     "p-event": "^4.2.0",
     "sinon": "^10.0.1",
-    "sinon-chai": "^3.6.0",
+    "sinon-chai": "^3.7.0",
     "timekeeper": ">=0.0.3"
   },
   "keywords": [
