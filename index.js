@@ -75,7 +75,7 @@ class Sender {
   }
 
   async _send(message, callback) {
-    var buf = Buffer.from(message.replace(/\s+$/, "") + os.EOL);
+    const buf = Buffer.from(`${message}${os.EOL}`);
 
     try {
       if (!this.client) await this._connect();

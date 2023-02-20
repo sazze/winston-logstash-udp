@@ -149,10 +149,10 @@ describe("winston-logstash-udp transport", function() {
       expect(response).to.be.eql(expected);
     });
 
-    it("remove all trailing blank characters and replace them with the operating system's EOL character", async () => {
+    it("adds an operating system's EOL character", async () => {
       const { logger, transport } = createLoggerWithTransport(port);
 
-      sinon.stub(transport, "_buildLog").returns('{"what":"ever"}' + "\r\n\t ");
+      sinon.stub(transport, "_buildLog").returns('{"what":"ever"}');
 
       const logSent = new Promise(resolve => {
         test_server = createTestServer(port, function(data) {

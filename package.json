@@ -1,6 +1,6 @@
 {
   "name": "winston-logstash-udp",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "A Logstash UDP transport for Winston, forked from @sazze",
   "homepage": "https://github.com/bringg/winston-logstash-udp",
   "scripts": {
